@@ -1,5 +1,6 @@
 import { Client, FlexMessage, FlexComponent } from '@line/bot-sdk';
 import { TimelineCovidData } from './moph';
+import moment from 'moment';
 
 const arrowsUrl = {
     up: {
@@ -43,7 +44,15 @@ export function replyToday(prev: TimelineCovidData, now: TimelineCovidData, repl
                 contents: [
                     {
                         type: "text",
-                        text: `ข้อมูลโควิดประจำวันที่ ${now.Date}`,
+                        text: `ข้อมูลผู้ป่วยโควิด`,
+                        weight: "bold",
+                        size: "xl",
+                        align: 'center',
+                        wrap: true
+                    },
+                    {
+                        type: "text",
+                        text: `ประจำวันที่ ${moment(now.Date, 'MM/DD/YYYY').format('DD/MM/YYYY')}`,
                         weight: "bold",
                         size: "xl",
                         align: 'center',
@@ -88,11 +97,12 @@ export function getReplyToken(body: any, index = 0): string {
 }
 
 function getCompareBox(prev: number, current: number, title: string, isOpposite = false): FlexComponent {
+    const direction = (current > prev) ? Direction.up : ((current < prev) ? Direction.down : Direction.none);
     return {
         type: 'box',
         layout: 'vertical',
         contents: [
-            getArrow((current > prev) ? Direction.up : Direction.none, isOpposite),
+            getArrow(direction, isOpposite),
             {
                 type: 'box',
                 layout: 'baseline',
@@ -115,8 +125,7 @@ function getCompareBox(prev: number, current: number, title: string, isOpposite 
                 size: 'xxs',
                 align: 'center',
                 wrap: true
-            },
-            getArrow((current < prev) ? Direction.down : Direction.none, isOpposite)
+            }
         ]
     }
 }
