@@ -5,6 +5,7 @@ import { getCovidStatToday } from "../controllers/covid-controller";
 const router = Router();
 
 router.post('/covid', (req, res) => {
+    console.log('/covid');
     getCovidStatToday()
         .then(result => {
             const replyToken = getReplyToken(req.body);
