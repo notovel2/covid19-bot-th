@@ -12,7 +12,7 @@ const arrowsUrl = {
         green: 'https://firebasestorage.googleapis.com/v0/b/covid19-bot-th.appspot.com/o/down-arrow-green.png?alt=media&token=0e4eea52-8749-4e1a-82ed-49286b51f33a'
     }
 }
-const CHANNEL_ACCESS_TOKEN = "v0noUgB4AgUiU5BTyFYwBOdL65zslntzDSUDgADFp5/Ymj+ZGyRUSqZ83AZ2QXIJ8UDdQ+k3vJYqg2X5g6FftxndsG3c02pBm/+JxvJvUlFe+jCIMUl68CAcF5z9aj3Goxv5CxFpT1e3LPzydvkHFwdB04t89/1O/w1cDnyilFU=";
+const CHANNEL_ACCESS_TOKEN = "OXQZWe3AGyYfmvmyolHrz4MK6m/ulspwJjwgrg8eMUMsGLB1bFzbudXRIdjDs1qQ+ca2cV1xGNpmLM0RnPCyC+4rlOerNfZ+LJnK04xO9PpL6JzpTpvH0tlQQWFHQHWCIcFwd6g2c0n2e8IHavE4nQdB04t89/1O/w1cDnyilFU=";
 const config = {
     channelAccessToken: CHANNEL_ACCESS_TOKEN
 }
