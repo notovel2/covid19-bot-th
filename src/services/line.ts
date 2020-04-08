@@ -33,6 +33,7 @@ export function reply(message: string, replyToken: string) {
 }
 
 export function replyToday(prev: TimelineCovidData, now: TimelineCovidData, replyToken: string) {
+    console.log('replying flex message');
     const message: FlexMessage = {
         type: 'flex',
         altText: 'Covid19 Today Overview',
@@ -84,8 +85,6 @@ export function replyToday(prev: TimelineCovidData, now: TimelineCovidData, repl
             }
         }
     };
-    console.log('replying flex message');
-    
     return client.replyMessage(replyToken, message);
 }
 

@@ -51,9 +51,12 @@ export function getToday(): Promise<TodayCovid> {
 export function getTimeline(): Promise<TimelineCovid> {
     const now = moment(moment.now());
     const { timeline } = cache;
-    if (timeline && timeline.valideDate && moment(timeline.valideDate).isSameOrBefore(now)) {
+    console.log('timeline', timeline);
+    
+    if (timeline && timeline.valideDate && moment(timeline.valideDate).isAfter(now)) {
         return Promise.resolve(timeline.data);
     }
+    console.log(`requesting to ${endpoint}/timeline`);
     return request(`${endpoint}/timeline`, baseOptions)
         .then((response: TimelineCovid) => {
             const { Data } = response;
