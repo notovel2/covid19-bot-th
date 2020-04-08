@@ -1,4 +1,5 @@
-import request, { RequestPromiseOptions, RequestPromise } from 'request-promise';
+import request, { RequestPromiseOptions } from 'request-promise';
+import moment from 'moment';
 
 export interface CovidData  {
     Confirmed: number;
@@ -36,10 +37,34 @@ const baseOptions: RequestPromiseOptions = {
     json: true
 };
 
-export function getToday(): RequestPromise<TodayCovid> {
-    return request(`${endpoint}/today`, baseOptions);
+interface Cache {
+    valideDate: Date;
+    data: TimelineCovid;
 }
 
-export function getTimeline(): RequestPromise<TimelineCovid> {
-    return request(`${endpoint}/timeline`, baseOptions);
+const cache: { [id: string]: Cache } = {};
+
+export function getToday(): Promise<TodayCovid> {
+    return request(`${endpoint}/today`, baseOptions).then();
+}
+
+export function getTimeline(): Promise<TimelineCovid> {
+    const now = moment(moment.now());
+    const { timeline } = cache;
+    if (timeline && timeline.valideDate && moment(timeline.valideDate).isSameOrBefore(now)) {
+        return Promise.resolve(timeline.data);
+    }
+    return request(`${endpoint}/timeline`, baseOptions)
+        .then((response: TimelineCovid) => {
+            const { Data } = response;
+            if (Data && Array.isArray(Data) && Data.length > 0) {
+                const valideDate = moment(Data[Data.length - 1].Date).add(1, 'days');
+                cache.timeline = {
+                    data: response,
+                    valideDate: valideDate.toDate()
+                }
+            }
+            return response;
+        });
+    
 }
