@@ -1,23 +1,33 @@
 import { Router } from "express";
-import { reply, replyToday, getReplyToken } from "../services/line";
-import { getCovidStatToday } from "../controllers/covid-controller";
+import { getReplyToken, getMessage } from "../services/line";
+import { getCovidStatToday, requestLocation, getCovidArea } from "../controllers/covid-controller";
 
 const router = Router();
 
 router.post('/covid', (req, res) => {
     console.log('/covid');
-    getCovidStatToday()
-        .then(result => {
-            const replyToken = getReplyToken(req.body);
-            if (!result) reply('ระบบขัดข้องกรุณาลองภายหลัง ขออภัยในความไม่สะดวก', replyToken);
-            const { Data } = result;
-            const lastIndex = Data.length - 1;
-            const prev = Data[lastIndex - 1];
-            const current = Data[lastIndex];
-            replyToday(prev, current, replyToken)
-                .then(val => res.send('complete'))
-                .catch(err => res.send(`error with ${err.message}`));
-        });
+    const message = getMessage(req.body);
+    const replyToken = getReplyToken(req.body);
+    let promise: Promise<any> = Promise.resolve();
+    const { type } = message;
+    if (type === 'text') {
+        const { text } = message;
+        switch(message.text) {
+            case 'today':
+                promise = getCovidStatToday(replyToken);
+                break;
+            case 'area':
+                promise = requestLocation(replyToken);
+                break;
+        }
+    }
+    else if (type === 'location') {
+        const { latitude, longitude } = message;
+        getCovidArea(replyToken, { latitude, longitude })
+    }
+    
+    promise.then(() => res.send())
+        .catch(err => res.send(err));
 });
 
 export default router;

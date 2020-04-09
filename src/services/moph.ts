@@ -31,6 +31,17 @@ export interface TimelineCovidData extends CovidData {
     Date: Date;
 }
 
+export interface CasesSumCovidData {
+    Province: { [province: string]: number };
+    Nation: { [nation: string]: number };
+    Gender: { [gender: string]: number };
+    LastData: Date,
+    UpdateDate: Date,
+    Source: string,
+    DevBy: string,
+    SeverBy: string
+}
+
 const endpoint = 'https://covid19.th-stat.com/api/open';
 const baseOptions: RequestPromiseOptions = {
     method: 'POST',
@@ -69,4 +80,11 @@ export function getTimeline(): Promise<TimelineCovid> {
             return response;
         });
     
+}
+
+export function getCasesSum() {
+    return request(`${endpoint}/cases/sum`, baseOptions)
+        .then((response: CasesSumCovidData) => {
+            
+        });
 }
