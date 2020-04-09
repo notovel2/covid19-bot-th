@@ -1,5 +1,6 @@
 import { Client, FlexMessage, FlexComponent } from '@line/bot-sdk';
 import { TimelineCovidData } from './moph';
+import { createReadStream } from 'fs';
 import moment from 'moment';
 
 const arrowsUrl = {
@@ -17,12 +18,59 @@ const config = {
     channelAccessToken: CHANNEL_ACCESS_TOKEN
 }
 const client = new Client(config);
-const spacer: FlexComponent = { type: 'box', layout: 'horizontal', contents: [{ type: 'spacer' }]}
-
+const horizontalSpacer: FlexComponent = { type: 'box', layout: 'horizontal', contents: [{ type: 'spacer', size: 'sm' }]};
+const verticalSpacer: FlexComponent = { type: 'box', layout: 'vertical', contents: [{ type: 'spacer', size: 'sm' }]};
 enum Direction{
     up,
     down,
     none
+}
+
+interface CovidSectionData {
+    total: number;
+    new: number;
+}
+
+export function createRichMenu(imageName: string) {
+    // const path = __dirname + '/' + imageName;
+    const path = './' + imageName;
+    client.createRichMenu({
+        size: {
+            width: 2500,
+            height: 1686
+        },
+        selected: true,
+        name: 'Today Covid',
+        chatBarText: 'Today Covid',
+        areas: [
+            {
+                bounds: {
+                    x: 0,
+                    y: 0,
+                    width: 2500,
+                    height: 1686
+                },
+                action: {
+                    type: 'message',
+                    text: 'Today'
+                }
+            }
+        ]
+    })
+    .then(id => {
+        console.log('setting rich menu image', id, path);
+        client.setRichMenuImage(id, createReadStream(path))
+        .then(res => {
+            console.log('setting default rich menu', id);
+            client.setDefaultRichMenu(id);
+        })
+        .catch(err => {
+            console.log('err', err);
+        });
+    })
+    .catch(reason => {
+        console.log(reason);
+    });
 }
 
 export function reply(message: string, replyToken: string) {
@@ -59,27 +107,14 @@ export function replyToday(prev: TimelineCovidData, now: TimelineCovidData, repl
                         align: 'center',
                         wrap: true
                     },
-                    spacer,
-                    {
-                        type: "box",
-                        layout: "horizontal",
-                        contents: [
-                            getCompareBox(prev.NewConfirmed, now.NewConfirmed, 'ผู้ติดเชื้อรายใหม่', true),
-                            getCompareBox(prev.NewRecovered, now.NewRecovered, 'จำนวนคนที่รักษาหายในวันนี้'),
-                            getCompareBox(prev.NewDeaths, now.NewDeaths, 'จำนวนผู้เสียชีวิตในวันนี้', true),
-                        ]
-                    },
-                    spacer,
-                    {
-                        type: 'box',
-                        layout: 'horizontal',
-                        contents: [
-                            getBox(now.Confirmed, 'ผู้ติดเชื้อทั้งหมด'),
-                            getBox(now.Recovered, 'จำนวนคนที่รักษาหายแล้วทั้งหมด'),
-                            getBox(now.Deaths, 'จำนวนผู้เสียชีวิตทั้งหมด')
-                        ]
-                    },
-                    spacer,
+                    verticalSpacer,
+                    verticalSpacer,
+                    getSection('ผู้ติดเชื้อ', { new: now.NewConfirmed, total: now.Confirmed }, { new: prev.NewConfirmed, total: prev.Confirmed}, true),
+                    verticalSpacer,
+                    getSection('รักษาหายกลับบ้านได้', { new: now.NewRecovered, total: now.Recovered}, { new: prev.NewRecovered, total: prev.Recovered }),
+                    verticalSpacer,
+                    getSection('จำนวนผู้เสียชีวิต', { new: now.NewDeaths, total: now.Deaths }, { new: prev.NewDeaths, total: prev.Deaths }, true),
+                    verticalSpacer,
                     getBox(now.Hospitalized, 'กำลังรักษาตัวทั้งหมด')
                 ]
             }
@@ -95,35 +130,52 @@ export function getReplyToken(body: any, index = 0): string {
     return events[index].replyToken;
 }
 
-function getCompareBox(prev: number, current: number, title: string, isOpposite = false): FlexComponent {
-    const direction = (current > prev) ? Direction.up : ((current < prev) ? Direction.down : Direction.none);
+function getSection(title: string, now: CovidSectionData, prev: CovidSectionData, isOpposite = false): FlexComponent {
     return {
         type: 'box',
         layout: 'vertical',
         contents: [
-            getArrow(direction, isOpposite),
-            {
-                type: 'box',
-                layout: 'baseline',
-                contents: [
-                    { type: 'filler' },
-                    
-                    { type: 'filler'}
-                ]
-            },
+            verticalSpacer,
             {
                 type: 'text',
-                text: `${current}`,
+                text: title,
                 size: 'lg',
-                weight: 'bold',
-                align: 'center'
+                align: 'center',
+                weight: 'bold'
             },
+            {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                    getCompareBox(now.new, 'วันนี้', isOpposite, prev.new),
+                    getBox(now.total, 'ทั้งหมด')
+                ]
+            }
+        ]
+    };
+}
+
+function getCompareBox(current: number, title: string, isOpposite = false, prev?: number): FlexComponent {
+
+    const direction = getDirection(current, prev);
+    return {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
             {
                 type: 'text',
                 text: `${title}`,
-                size: 'xxs',
+                size: 'lg',
                 align: 'center',
                 wrap: true
+            },
+            getArrow(direction, isOpposite),
+            {
+                type: 'text',
+                text: `${current}`,
+                size: 'xxl',
+                weight: 'bold',
+                align: 'center'
             }
         ]
     }
@@ -136,16 +188,17 @@ function getBox(amount: number, title: string): FlexComponent {
         contents: [
             {
                 type: 'text',
-                text: `${amount}`,
-                size: 'md',
-                weight: 'bold',
+                text: title,
+                size: 'lg',
+                wrap: true,
                 align: 'center'
             },
+            { type: 'filler' },
             {
                 type: 'text',
-                text: title,
-                size: 'xxs',
-                wrap: true,
+                text: `${amount}`,
+                size: 'xxl',
+                weight: 'bold',
                 align: 'center'
             }
         ]
@@ -176,4 +229,16 @@ function getArrow(direction: Direction, isOpposite = false): FlexComponent {
             { type: 'filler'}
         ]
     };
+}
+
+function getDirection(current: number, prev?: number): Direction {
+    if (prev) {
+        if (current > prev) {
+            return Direction.up;
+        }
+        if (current < prev) {
+            return Direction.down;
+        }
+    }
+    return Direction.none;
 }
