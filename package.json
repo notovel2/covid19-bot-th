@@ -27,7 +27,7 @@
     "@types/request": "^2.48.4",
     "@types/request-promise": "^4.1.46",
     "@types/winston": "^2.4.4",
-    "async": "^3.1.0",
+    "async": "^3.2.2",
     "bcrypt-nodejs": "^0.0.3",
     "bluebird": "^3.5.5",
     "errorhandler": "^1.5.1",
